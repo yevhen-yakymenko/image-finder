@@ -24,14 +24,13 @@ export default class App extends Component {
     const prevPage = prevState.page;
     const { request, page } = this.state;
 
-    if (request !== prevRequest || page !== prevPage) {
+    if (request !== prevRequest || page > prevPage) {
       this.searchImages(request, page);
-      this.handleScroll();
     }
 
-    // if (prevPage < page) {
-    //   this.handleScroll();
-    // }
+    if (page !== 1) {
+      this.handleScroll();
+    }
   }
 
   handleScroll = () => {
@@ -58,6 +57,7 @@ export default class App extends Component {
       console.log(error);
     } finally {
       this.setState({ isLoading: false });
+      this.handleScroll();
     }
   };
 
