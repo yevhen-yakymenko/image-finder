@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import { useState, useEffect } from 'react';
 
 import Searchbar from 'components/Searchbar';
 import ImageGallery from 'components/ImageGallery';
@@ -9,74 +9,69 @@ import { getImages } from 'services/apiService';
 
 import { AppContainer } from './App.styled';
 
-export default class App extends Component {
-  state = {
-    request: '',
-    images: [],
-    totalPages: 0,
-    page: 1,
-    isLoading: false,
-    error: false,
-  };
+export default function App() {
+  const [request, setRequest] = useState('');
+  const [images, setImages] = useState([]);
+  const [totalPages, setTotalPages] = useState(0);
+  const [page, setPage] = useState(1);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(false);
 
-  componentDidUpdate(_, prevState) {
-    const prevRequest = prevState.request;
-    const prevPage = prevState.page;
-    const { request, page } = this.state;
+  useEffect(() => {
+    const searchImages = async () => {
+      try {
+        setIsLoading(true);
+        await getImages(request, page).then(({ totalHits, hits }) => {
+          setImages(prevImage => [...prevImage, ...hits]);
+          setTotalPages(totalHits);
+        });
+      } catch (error) {
+        setError(true);
+        console.log(error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-    if (request !== prevRequest || page > prevPage) {
-      this.searchImages(request, page);
+    if (request === '') {
+      return;
     }
 
-    if (page !== 1) {
-      this.handleScroll();
+    searchImages();
+  }, [page, request]);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      console.log('handleScroll');
+      window.scrollTo({
+        top: document.documentElement.scrollHeight,
+        behavior: 'smooth',
+      });
+    };
+
+    if (page !== 1 && !isLoading) {
+      handleScroll();
     }
-  }
+  }, [isLoading, page]);
 
-  handleScroll = () => {
-    window.scrollTo({
-      top: document.documentElement.scrollHeight,
-      behavior: 'smooth',
-    });
+  const handleSubmit = request => {
+    setRequest(request);
+    setImages([]);
+    setPage(1);
   };
 
-  handleSubmit = request =>
-    this.setState({ request: request, images: [], page: 1 });
-
-  searchImages = async (request, page) => {
-    try {
-      this.setState({ isLoading: true });
-      await getImages(request, page).then(({ totalHits, hits }) =>
-        this.setState(prevState => ({
-          images: [...prevState.images, ...hits],
-          totalPages: totalHits,
-        }))
-      );
-    } catch (error) {
-      this.setState({ error: true });
-      console.log(error);
-    } finally {
-      this.setState({ isLoading: false });
-      this.handleScroll();
-    }
+  const onLoadMore = () => {
+    setPage(prevPage => prevPage + 1);
   };
 
-  onLoadMore = () => {
-    this.setState(({ page }) => ({ page: page + 1 }));
-  };
-
-  render() {
-    const { images, page, isLoading, totalPages } = this.state;
-
-    return (
-      <AppContainer>
-        <Searchbar onSubmit={this.handleSubmit} />
-        <ImageGallery images={images} />
-        <Loader loading={isLoading} />
-        {images.length > 0 && !isLoading && page < totalPages && (
-          <Button onClick={this.onLoadMore} />
-        )}
-      </AppContainer>
-    );
-  }
+  return (
+    <AppContainer>
+      <Searchbar onSubmit={handleSubmit} />
+      <ImageGallery images={images} />
+      <Loader loading={isLoading} />
+      {images.length > 0 && !isLoading && page < totalPages && (
+        <Button onClick={onLoadMore} />
+      )}
+    </AppContainer>
+  );
 }
