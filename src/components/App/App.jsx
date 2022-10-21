@@ -15,7 +15,7 @@ export default function App() {
   const [totalPages, setTotalPages] = useState(0);
   const [page, setPage] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState(false);
+  // const [error, setError] = useState(false);
 
   useEffect(() => {
     const searchImages = async () => {
@@ -26,7 +26,7 @@ export default function App() {
           setTotalPages(totalHits);
         });
       } catch (error) {
-        setError(true);
+        // setError(true);
         console.log(error);
       } finally {
         setIsLoading(false);
